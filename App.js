@@ -89,7 +89,7 @@ catch (err) {
  async getDirections(startLoc, destinationLoc) {
 
        try {
-         let key ='AIzaSyBYBKSRkWkATTADEO_1pSY8KoeBMDF0dUE';
+         
            let resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${ startLoc }&destination=${ destinationLoc }&key=${key}`)           
            let respJson = await resp.json();
            console.log('Resp' + JSON.stringify(respJson).match('start_address'))
