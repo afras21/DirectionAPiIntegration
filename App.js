@@ -10,6 +10,8 @@ import React, {Component} from 'react';
 import {Platform, Text, View, PermissionsAndroid, AppRegistry, StyleSheet, Dimensions, Image, StatusBar, TouchableOpacity} from 'react-native';
 import MapView, {PROVIDER_GOOGLE } from 'react-native-maps';
 import Polyline from '@mapbox/polyline';
+const { width, height } = Dimensions.get('screen')
+
 
 
 
@@ -18,15 +20,15 @@ export default class App extends Component {
 
 constructor(props) {
   super(props);
-  console.log('props' + JSON.stringify(props))
+  
   this.state = {
-    latitude: 0,  /*37.421998333333335*/
-    longitude: 0,   /*-122.08400000000002*/
+    latitude: 12.8568761, //pg location
+    longitude: 77.5887916,
     error: null,
     concat: null,
     coords:[],
     x: 'false',
-    cordLatitude:12.878094,
+    cordLatitude:12.878094, //office location
     cordLongitude:77.595491,
   };
 
@@ -38,18 +40,18 @@ componentDidMount() {
   this.getPermissionRequest();
 
 
-  navigator.geolocation.getCurrentPosition(
-     (position) => {
-       this.setState({
-         latitude: position.coords.latitude,
-         longitude: position.coords.longitude,
-         error: null,
-       });
-       this.mergeLot("12.878094,77.595491");
-     },
-     (error) => this.setState({ error: error.message }),
-     { enableHighAccuracy: false, timeout: 200000, maximumAge: 1000 },
-   );
+  // navigator.geolocation.getCurrentPosition(
+  //    (position) => {
+  //      this.setState({
+  //        latitude: position.coords.latitude,
+  //        longitude: position.coords.longitude,
+  //        error: null,
+  //      });
+  //      this.mergeLot("12.878094,77.595491");
+  //    },
+  //    (error) => this.setState({ error: error.message }),
+  //    { enableHighAccuracy: false, timeout: 200000, maximumAge: 1000 },
+  //  );
 
  }
 
@@ -89,10 +91,23 @@ catch (err) {
  async getDirections(startLoc, destinationLoc) {
 
        try {
-         
-           let resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${ startLoc }&destination=${ destinationLoc }&key=${key}`)           
+        let key ='AIzaSyBYBKSRkWkATTADEO_1pSY8KoeBMDF0dUE';
+
+           let resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${ startLoc }&destination=${ destinationLoc }&key=${key}`)
            let respJson = await resp.json();
-           console.log('Resp' + JSON.stringify(respJson).match('start_address'))
+           console.log('Resp' + JSON.stringify(respJson))
+           const response = respJson.routes[0]
+           const distanceTime = response.legs[0]
+           const destAddress = distanceTime.end_address;
+           const startAddress = distanceTime.start_address;
+
+           console.log('distance time' + JSON.stringify(distanceTime));
+           const distance = distanceTime.distance.text
+           const time = distanceTime.duration.text
+      
+
+
+
            let points = Polyline.decode(respJson.routes[0].overview_polyline.points);
           //  alert('point' + points)
 
@@ -102,7 +117,9 @@ catch (err) {
                    longitude : point[1]
                }
            })
-           this.setState({coords: coords})
+          //  this.setState({coords: coords})
+          this.setState({ coords, distance, time , startAddress, destAddress})
+
            this.setState({x: "true"})
            return coords
        } catch(error) {
@@ -111,21 +128,49 @@ catch (err) {
            return error
        }
    }
-  //  handlePress = coordinate => {
-  //   let latlong = coordinate.latitude + "," + coordinate.longitude;
-  //   this.setState({
-  //     cordLatitude: coordinate.latitude,
-  //     cordLongitude: coordinate.longitude
-  //   });
-  //   this.mergeLot(latlong);
-  // };
+   handlePress = coordinate => {
+    let latlong = coordinate.latitude + "," + coordinate.longitude;
+    this.setState({
+      cordLatitude: coordinate.latitude,
+      cordLongitude: coordinate.longitude
+    });
+    this.mergeLot(latlong);
+  };
 
 render() {
+  const {
+    time,
+    startAddress,
+    destAddress,
+    coords,
+    distance,
+    latitude,
+    longitude,
+    destination
+  } = this.state
+
   if (this.state.loading) {
     return null;
   }
   console.log('latitude --- > ' + this.state.latitude+ ', '+this.state.longitude)
   return (
+<View style={{flex: 1}}>
+    <View
+    style={{
+      width,
+      paddingTop: 10,
+      alignSelf: 'center',
+      alignItems: 'center',
+      height: height * 0.15,
+      backgroundColor: 'white',
+      justifyContent: 'flex-end',
+    }}>
+    <Text style={{ fontWeight: 'bold' }}>Estimated Time: {time}</Text>
+    <Text style={{ fontWeight: 'bold' }}>Estimated Distance: {distance}</Text>
+    <Text style={{ fontWeight: 'bold' }}>Destination: {destAddress}</Text>
+
+  </View>
+
     <MapView 
     
     style={{flex: 1}} 
@@ -135,21 +180,24 @@ render() {
           longitude: this.state.longitude,
           latitudeDelta: 0.005,
           longitudeDelta: 0.005
-    }}          /*onPress={({ nativeEvent }) => this.handlePress(nativeEvent.coordinate)}*/
+    }}          onPress={({ nativeEvent }) => this.handlePress(nativeEvent.coordinate)}
      >
 
     {!!this.state.latitude && !!this.state.longitude && <MapView.Marker
        coordinate={{"latitude":this.state.latitude,"longitude":this.state.longitude}}
        title={"Your Location"}
+      //  {...alert('working in yout location')}
      />}
-
 
      {!!this.state.cordLatitude && !!this.state.cordLongitude && <MapView.Marker
         coordinate={{"latitude":this.state.cordLatitude,"longitude":this.state.cordLongitude}}
         title={"Your Destination"}
+        // {...alert('working inside destinations')}
+
       />}
 
      {!!this.state.latitude && !!this.state.longitude && this.state.x == 'true' && <MapView.Polyline
+        //  {...alert('working inside not longitude')}
           coordinates={this.state.coords}
           strokeWidth={4}
           strokeColor="red"/>
@@ -157,14 +205,12 @@ render() {
       
 
       {!!this.state.latitude && !!this.state.longitude && this.state.x == 'error' && <MapView.Polyline
-        coordinates={[
-            {latitude: this.state.latitude, longitude: this.state.longitude},
-            {latitude: this.state.cordLatitude, longitude: this.state.cordLongitude},
-        ]}
-        strokeWidth={2}
-        strokeColor="red"/>
+        
+          // {...alert('nothing found')}
+        />
        }
     </MapView>
+    </View>
   );
 }
 

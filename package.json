@@ -9,9 +9,14 @@
   "dependencies": {
     "@mapbox/polyline": "^1.1.0",
     "haversine": "^1.1.1",
+    "native-base": "^2.12.1",
     "react": "16.8.3",
     "react-native": "0.59.9",
-    "react-native-maps": "^0.24.2"
+    "react-native-geocoding": "^0.3.0",
+    "react-native-google-maps-directions": "^2.1.0",
+    "react-native-maps": "^0.24.2",
+    "react-native-maps-directions": "^1.7.0",
+    "expo": "^32.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
