@@ -7,137 +7,177 @@
  */
 
 import React, {Component} from 'react';
-import {Platform, Text, View, PermissionsAndroid, AppRegistry, StyleSheet, Dimensions, Image, StatusBar, TouchableOpacity} from 'react-native';
-import MapView, {PROVIDER_GOOGLE } from 'react-native-maps';
+import {Text, View, PermissionsAndroid, StyleSheet, Dimensions} from 'react-native';
 import Polyline from '@mapbox/polyline';
 const { width, height } = Dimensions.get('screen')
-
-
+import getDirections from 'react-native-google-maps-directions'
+import { Button, Icon } from 'native-base';
 
 
 export default class App extends Component {
+   ; // remember to remove while commiting
+
+   destLat = 12.9507; // location of lalbag
+   destLong = 77.5848;
+   startLat = 0;
+   startLong = 0;
+   constructor() {
+     super()
+     this.state = {
+       coordinates : []
+     }
+     this.getDirections = this.getDirections.bind(this);
+     this.handleGetDirections = this.handleGetDirections.bind(this);
+   }
+
+   componentDidMount () {
+     setInterval(() =>{
+         this.getCurrentLocation();
+       },
+       15000 // 15 seconds
+     )
+     console.log('componenr did mount in working')
+     // for location Permission
+        this.getLocationPermission();
+        console.log('startLat' + this.startLat)
+
+    // getting direction details
+         this.getDirections ("12.8572648, 77.5887875", "" +this.destLat + "," + ""+this.destLong)``
+         
+   }
 
 
-constructor(props) {
-  super(props);
-  
-  this.state = {
-    latitude: 12.8568761, //pg location
-    longitude: 77.5887916,
-    error: null,
-    concat: null,
-    coords:[],
-    x: 'false',
-    cordLatitude:12.878094, //office location
-    cordLongitude:77.595491,
-  };
+   handleGetDirections = () => {
+      const data = {
+        source : {
+          latitude : this.startLat,
+          longitude: this.startLong,
+        },
+        destination : {
+          latitude : this.destLat,
+          longitude : this.destLong
+        },
+        params: [
+          {
+            key : "travelmode",
+            value: "driving"
+          },
+          {
+            key: "dir_action",
+            value: "navigate"
+          }
+        ]
+      }
+      if(this.startLat && this.startLong)
+      {
+        getDirections(data);
+      } else {
+        alert('please wait for location')
+      }
 
-  this.mergeLot = this.mergeLot.bind(this);
+   }
 
-}
+   async getLocationPermission () {
+    try {
+            let granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, {
+                  title: 'Servitor Needs Location Access',
+                  message: 'Please allow location access'
+                })
+                console.log('granted------------------> ' + JSON.stringify(granted));
+                console.log('permisionandroid----------> ' + PermissionsAndroid.RESULTS.GRANTED);
 
-componentDidMount() {
-  this.getPermissionRequest();
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                alert("You can use the location")
+                this.getCurrentLocation();
+            }
+            else {
+              granted = 
+              PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
+            }
+        }
+        catch (err) {
+            console.log('error in getting location permission' + err)
+            alert('error in' + err)
+      
+        }
+   }
 
+   getCurrentLocation () {
+     console.log('getting current location.................')
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("getCurrentPosition Success"+position.coords.latitude);
+        // alert('' + position.coords.latitude)
+        // this.startLat = position.coords.latitude;
+        // this.startLong = position.coords.longitude;
+        this.watchPosition();          // for watching location changes
+      },
+      (error) => {
+        alert('Problem in Detecting your current Location')
+        console.log("Error dectecting your location" + JSON.stringify(error));
+      },
+      {enableHighAccuracy: false, timeout: 20000, maximumAge: 1000}
+    );
+   }
 
-  // navigator.geolocation.getCurrentPosition(
-  //    (position) => {
-  //      this.setState({
-  //        latitude: position.coords.latitude,
-  //        longitude: position.coords.longitude,
-  //        error: null,
-  //      });
-  //      this.mergeLot("12.878094,77.595491");
-  //    },
-  //    (error) => this.setState({ error: error.message }),
-  //    { enableHighAccuracy: false, timeout: 200000, maximumAge: 1000 },
-  //  );
-
- }
-
- getPermissionRequest(){
-  try {
-    let granted = 
-      PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
-        // alert(PermissionsAndroid.RESULTS.GRANTED)
-    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        alert("You can use the location")
-    }
-    else {
-      granted = 
-      PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
-        // alert("enied" +  PermissionsAndroid.RESULTS.GRANTED)
-    }
-}
-catch (err) {
-    console.warn(err)
-    alert('error' + err)
-
-}
- }
-
- mergeLot(destination) {
-  if (this.state.latitude != null && this.state.longitude != null) {
-    let concatLot = this.state.latitude + "," + this.state.longitude;
-    this.setState({
-      concat: concatLot
-    });
-    this.getDirections(concatLot, destination);
+   watchPosition() {
+    this.watchID = navigator.geolocation.watchPosition(
+      (position) => {
+        this.startLat = position.coords.latitude;
+        this.startLong = position.coords.longitude;
+        // this.handleGetDirections();
+        console.log("watchPosition Success" + JSON.stringify(position));
+      },
+      (error) => {
+        console.log("Error dectecting your location" + error);
+      },
+      {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+    );
   }
-}
 
- async getDirections(startLoc, destinationLoc) {
 
-       try {
 
+    async getDirections(startLoc, destinationLoc) {
+      try{
+
+          let ;
            let resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${ startLoc }&destination=${ destinationLoc }&key=${key}`)
            let respJson = await resp.json();
-           console.log('Resp' + JSON.stringify(respJson))
+          //  console.log('Resp' + JSON.stringify(respJson))
+
            const response = respJson.routes[0]
            const distanceTime = response.legs[0]
            const destAddress = distanceTime.end_address;
            const startAddress = distanceTime.start_address;
 
-           console.log('distance time' + JSON.stringify(distanceTime));
            const distance = distanceTime.distance.text
+           console.log('distance ' + distance);
+
            const time = distanceTime.duration.text
-      
-
-
+           console.log('time' + time);            
 
            let points = Polyline.decode(respJson.routes[0].overview_polyline.points);
-          //  alert('point' + points)
 
            let coords = points.map((point, index) => {
                return  {
                    latitude : point[0],
                    longitude : point[1]
                }
-           })
-          //  this.setState({coords: coords})
-          this.setState({ coords, distance, time , startAddress, destAddress})
+           });
+           const newCoords = [...this.state.coordinates, coords];
+           this.setState({ coordinates: newCoords, time, destAddress, distance});
+           return coords;
+           
+      } catch (error) {
+        alert('error in getting direction ' + error);
+      }
+    }
 
-           this.setState({x: "true"})
-           return coords
-       } catch(error) {
-        // alert('error' + error)
-        this.setState({x: "error"})
-           return error
-       }
-   }
-   handlePress = coordinate => {
-    let latlong = coordinate.latitude + "," + coordinate.longitude;
-    this.setState({
-      cordLatitude: coordinate.latitude,
-      cordLongitude: coordinate.longitude
-    });
-    this.mergeLot(latlong);
-  };
 
-render() {
-  const {
+    render () {
+        const {
     time,
     startAddress,
     destAddress,
@@ -147,72 +187,35 @@ render() {
     longitude,
     destination
   } = this.state
-
-  if (this.state.loading) {
-    return null;
-  }
-  console.log('latitude --- > ' + this.state.latitude+ ', '+this.state.longitude)
-  return (
-<View style={{flex: 1}}>
-    <View
+      return (
+        <View style={{flex: 1}}>
+     <View
     style={{
       width,
       paddingTop: 10,
-      alignSelf: 'center',
-      alignItems: 'center',
+      paddingLeft: 10,
+      paddingBottom: 10,
       height: height * 0.15,
-      backgroundColor: 'white',
+      backgroundColor: '#f9edcf',
       justifyContent: 'flex-end',
     }}>
-    <Text style={{ fontWeight: 'bold' }}>Estimated Time: {time}</Text>
+    <Text style={{ fontWeight: 'bold'}}>Estimated Time: {time}</Text>
     <Text style={{ fontWeight: 'bold' }}>Estimated Distance: {distance}</Text>
     <Text style={{ fontWeight: 'bold' }}>Destination: {destAddress}</Text>
 
   </View>
-
-    <MapView 
-    
-    style={{flex: 1}} 
-    customMapStyle = {this.mapStyle}
-    initialRegion={{
-          latitude: this.state.latitude,
-          longitude: this.state.longitude,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005
-    }}          onPress={({ nativeEvent }) => this.handlePress(nativeEvent.coordinate)}
-     >
-
-    {!!this.state.latitude && !!this.state.longitude && <MapView.Marker
-       coordinate={{"latitude":this.state.latitude,"longitude":this.state.longitude}}
-       title={"Your Location"}
-      //  {...alert('working in yout location')}
-     />}
-
-     {!!this.state.cordLatitude && !!this.state.cordLongitude && <MapView.Marker
-        coordinate={{"latitude":this.state.cordLatitude,"longitude":this.state.cordLongitude}}
-        title={"Your Destination"}
-        // {...alert('working inside destinations')}
-
-      />}
-
-     {!!this.state.latitude && !!this.state.longitude && this.state.x == 'true' && <MapView.Polyline
-        //  {...alert('working inside not longitude')}
-          coordinates={this.state.coords}
-          strokeWidth={4}
-          strokeColor="red"/>
-      }
-      
-
-      {!!this.state.latitude && !!this.state.longitude && this.state.x == 'error' && <MapView.Polyline
-        
-          // {...alert('nothing found')}
-        />
-       }
-    </MapView>
-    </View>
-  );
-}
-
+          <Button >
+           <Icon
+           size={30}
+           color={"#fff"}
+           name={"ios-man"}
+           onPress={
+             this.handleGetDirections
+             }/>
+           </Button>
+        </View>
+      );
+    }
 
 styles = StyleSheet.create({
 map: {
@@ -224,221 +227,6 @@ map: {
 },
 });
 
- mapStyle = [
-  {
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#ebe3cd"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#523735"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#f5f1e6"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "color": "#c9b2a6"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "color": "#dcd2be"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#ae9e90"
-      }
-    ]
-  },
-  {
-    "featureType": "landscape.natural",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dfd2ae"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dfd2ae"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#93817c"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry.fill",
-    "stylers": [
-      {
-        "color": "#a5b076"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#447530"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#f5f1e6"
-      }
-    ]
-  },
-  {
-    "featureType": "road.arterial",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#fdfcf8"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#f8c967"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "color": "#e9bc62"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e98d58"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "color": "#db8555"
-      }
-    ]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#806b63"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dfd2ae"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#8f7d77"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#ebe3cd"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.station",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dfd2ae"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry.fill",
-    "stylers": [
-      {
-        "color": "#b9d3c2"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#92998d"
-      }
-    ]
-  }
-]
-
 }
+
 
